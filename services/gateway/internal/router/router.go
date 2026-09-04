@@ -11,8 +11,8 @@ func New() *gin.Engine {
 
 	r.Use(
 		requestid.New(),
-		gin.Recovery(),
 		gin.Logger(),
+		gin.Recovery(),
 	)
 
 	r.GET("/health", handler.Health)
