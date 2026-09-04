@@ -1,0 +1,39 @@
+# Go build artifacts
+/bin/
+/build/
+/dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+
+# Test, coverage, and profiling output
+*.out
+*.prof
+*.pprof
+*.trace
+
+# Local runtime files
+*.log
+/tmp/
+/.tmp/
+__debug_bin*
+
+# Local environment files (keep shareable templates)
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Editors and IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Operating-system metadata
+.DS_Store
+Thumbs.db
