@@ -40,24 +40,45 @@ func TestCatalogEndpoints(t *testing.T) {
 		path       string
 		wantStatus int
 		wantBody   string
+		wantJSON   bool
 	}{
+		{
+			name:       "reports catalog health",
+			path:       "/health",
+			wantStatus: http.StatusOK,
+			wantBody:   `{"service":"catalog","status":"ok"}`,
+			wantJSON:   true,
+		},
+		{
+			name:       "reports liveness",
+			path:       "/health/live",
+			wantStatus: http.StatusNoContent,
+		},
+		{
+			name:       "reports readiness",
+			path:       "/health/ready",
+			wantStatus: http.StatusNoContent,
+		},
 		{
 			name:       "lists products",
 			path:       "/products",
 			wantStatus: http.StatusOK,
 			wantBody:   `[{"id":"prod-1","name":"Mechanical Keyboard","price_cents":12999},{"id":"prod-2","name":"Ergonomic Mouse","price_cents":10999}]`,
+			wantJSON:   true,
 		},
 		{
 			name:       "returns a product by ID",
 			path:       "/products/prod-1",
 			wantStatus: http.StatusOK,
 			wantBody:   `{"id":"prod-1","name":"Mechanical Keyboard","price_cents":12999}`,
+			wantJSON:   true,
 		},
 		{
 			name:       "returns not found for an unknown product",
 			path:       "/products/missing",
 			wantStatus: http.StatusNotFound,
 			wantBody:   `{"error":"product not found"}`,
+			wantJSON:   true,
 		},
 	}
 
@@ -72,8 +93,10 @@ func TestCatalogEndpoints(t *testing.T) {
 				t.Fatalf("status code = %d, want %d", recorder.Code, tt.wantStatus)
 			}
 
-			if got := recorder.Header().Get("Content-Type"); got != "application/json; charset=utf-8" {
-				t.Errorf("Content-Type = %q, want %q", got, "application/json; charset=utf-8")
+			if tt.wantJSON {
+				if got := recorder.Header().Get("Content-Type"); got != "application/json; charset=utf-8" {
+					t.Errorf("Content-Type = %q, want %q", got, "application/json; charset=utf-8")
+				}
 			}
 
 			if got := recorder.Body.String(); got != tt.wantBody {

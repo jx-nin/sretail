@@ -6,13 +6,13 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY internal ./internal
-COPY services/gateway ./services/gateway
+COPY services/catalog ./services/catalog
 
 RUN CGO_ENABLED=0 go build \
     -trimpath \
     -ldflags="-s -w" \
-    -o /out/gateway \
-    ./services/gateway/cmd/gateway
+    -o /out/catalog \
+    ./services/catalog/cmd/catalog
 
 FROM alpine:edge
 
@@ -22,13 +22,13 @@ RUN apk add --no-cache ca-certificates tzdata \
     && addgroup -S appuser \
     && adduser -S -G appuser -H -s /sbin/nologin appuser
 
-COPY --from=builder --chown=appuser:appuser /out/gateway /app/gateway
+COPY --from=builder --chown=appuser:appuser /out/catalog /app/catalog
 
 USER appuser:appuser
 
 ENV GIN_MODE=release
 
-EXPOSE 8080
+EXPOSE 8081
 STOPSIGNAL SIGTERM
 
-ENTRYPOINT ["/app/gateway"]
+ENTRYPOINT ["/app/catalog"]
