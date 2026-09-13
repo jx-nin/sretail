@@ -1,0 +1,20 @@
+name: sretail
+
+services:
+  gateway:
+    image: "${GATEWAY_IMAGE:?set GATEWAY_IMAGE}"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/health/ready"]
+      interval: 2s
+      timeout: 2s
+      retries: 10
+      start_period: 2s
+
+  catalog:
+    image: "${CATALOG_IMAGE:?set CATALOG_IMAGE}"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8081/health/ready"]
+      interval: 2s
+      timeout: 2s
+      retries: 10
+      start_period: 2s

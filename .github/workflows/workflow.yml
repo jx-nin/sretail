@@ -41,3 +41,21 @@ jobs:
 
       - name: Build
         run: go build ./...
+
+  compose-local:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Validate local Compose configuration
+        run: LOCAL_ENV_FILE=.env.local.example make local-config
+
+      - name: Build and smoke test local stack
+        run: LOCAL_ENV_FILE=.env.local.example make local-verify
+
+      - name: Stop local stack
+        if: always()
+        run: LOCAL_ENV_FILE=.env.local.example make local-down

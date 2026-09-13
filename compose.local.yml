@@ -1,0 +1,14 @@
+services:
+  gateway:
+    build:
+      context: .
+      dockerfile: services/gateway/Dockerfile
+    ports:
+      - "127.0.0.1:${GATEWAY_PORT:-8080}:8080"
+
+  catalog:
+    build:
+      context: .
+      dockerfile: services/catalog/Dockerfile
+    ports:
+      - "127.0.0.1:${CATALOG_PORT:-8081}:8081"

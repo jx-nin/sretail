@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalog
+  labels:
+    app.kubernetes.io/name: catalog
+    app.kubernetes.io/instance: sretail
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: sretail
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: catalog
+      app.kubernetes.io/instance: sretail
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: catalog
+        app.kubernetes.io/instance: sretail
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: sretail
+    spec:
+      containers:
+      - name: catalog
+        # Each environment overlay must replace this with its deployable image.
+        image: registry.invalid/sretail/catalog:placeholder
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 8081
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: http
+          periodSeconds: 10
+          timeoutSeconds: 1
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: http
+          periodSeconds: 5
+          timeoutSeconds: 1
+          failureThreshold: 3
