@@ -7,6 +7,31 @@ permissions:
   contents: read
 
 jobs:
+  manifest-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: v1.37.0
+
+      - name: Render local catalog manifests
+        run: >-
+          kubectl kustomize deploy/k8s/overlays/local/catalog
+          > "$RUNNER_TEMP/catalog-manifests.yaml"
+
+      - name: Validate rendered manifests
+        run: >-
+          docker run --rm
+          --volume "$RUNNER_TEMP:/manifests:ro"
+          ghcr.io/yannh/kubeconform@sha256:85dbef6b4b312b99133decc9c6fc9495e9fc5f92293d4ff3b7e1b30f5611823c
+          -strict -summary /manifests/catalog-manifests.yaml
+
   go-check:
     runs-on: ubuntu-latest
     timeout-minutes: 10

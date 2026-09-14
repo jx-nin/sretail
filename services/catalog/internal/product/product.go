@@ -5,7 +5,10 @@ import (
 	"errors"
 )
 
-var ErrNotFound = errors.New("product not found")
+var (
+	ErrNotFound    = errors.New("product not found")
+	ErrDuplicateID = errors.New("duplicate product ID")
+)
 
 type Product struct {
 	ID         string `json:"id"`

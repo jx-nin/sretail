@@ -21,7 +21,7 @@ func TestCatalogEndpoints(t *testing.T) {
 		gin.DefaultWriter = originalWriter
 	})
 
-	store := product.NewMemoryStore([]product.Product{
+	store, err := product.NewMemoryStore([]product.Product{
 		{
 			ID:         "prod-1",
 			Name:       "Mechanical Keyboard",
@@ -33,6 +33,9 @@ func TestCatalogEndpoints(t *testing.T) {
 			PriceCents: 10999,
 		},
 	})
+	if err != nil {
+		t.Fatalf("NewMemoryStore() error = %v", err)
+	}
 	r := router.New(store)
 
 	tests := []struct {

@@ -15,7 +15,7 @@ import (
 )
 
 func main() {
-	store := product.NewMemoryStore([]product.Product{
+	store, err := product.NewMemoryStore([]product.Product{
 		{
 			ID:         "prod-1",
 			Name:       "Mechanical Keyboard",
@@ -27,6 +27,9 @@ func main() {
 			PriceCents: 10999,
 		},
 	})
+	if err != nil {
+		log.Fatalf("create product store: %v", err)
+	}
 
 	s := &http.Server{
 		Addr:              ":8081",

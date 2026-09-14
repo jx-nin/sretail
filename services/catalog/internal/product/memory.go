@@ -9,19 +9,23 @@ type MemoryStore struct {
 
 var _ Store = (*MemoryStore)(nil)
 
-func NewMemoryStore(products []Product) *MemoryStore {
+func NewMemoryStore(products []Product) (*MemoryStore, error) {
 	productCopy := make([]Product, len(products))
 	copy(productCopy, products)
 
 	byID := make(map[string]Product, len(productCopy))
 	for _, product := range productCopy {
+		if _, exists := byID[product.ID]; exists {
+			return nil, ErrDuplicateID
+		}
+
 		byID[product.ID] = product
 	}
 
 	return &MemoryStore{
 		products: productCopy,
 		byID:     byID,
-	}
+	}, nil
 }
 
 func (s *MemoryStore) List(_ context.Context) ([]Product, error) {

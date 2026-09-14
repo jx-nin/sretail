@@ -17,7 +17,10 @@ func TestMemoryStoreGetByID(t *testing.T) {
 		},
 	}
 
-	store := product.NewMemoryStore(seed)
+	store, err := product.NewMemoryStore(seed)
+	if err != nil {
+		t.Fatalf("NewMemoryStore() error = %v", err)
+	}
 
 	t.Run("returns an existing product", func(t *testing.T) {
 		got, err := store.GetByID(context.Background(), "prod-1")
@@ -52,7 +55,10 @@ func TestMemoryStoreList(t *testing.T) {
 		},
 	}
 
-	store := product.NewMemoryStore(seed)
+	store, err := product.NewMemoryStore(seed)
+	if err != nil {
+		t.Fatalf("NewMemoryStore() error = %v", err)
+	}
 
 	seed[0].Name = "Modified Keyboard"
 
@@ -97,7 +103,10 @@ func TestMemoryStoreList(t *testing.T) {
 }
 
 func TestMemoryStoreListEmpty(t *testing.T) {
-	store := product.NewMemoryStore(nil)
+	store, err := product.NewMemoryStore(nil)
+	if err != nil {
+		t.Fatalf("NewMemoryStore() error = %v", err)
+	}
 
 	got, err := store.List(context.Background())
 	if err != nil {
@@ -110,5 +119,20 @@ func TestMemoryStoreListEmpty(t *testing.T) {
 
 	if len(got) != 0 {
 		t.Errorf("List() returned %d products, want 0", len(got))
+	}
+}
+
+func TestNewMemoryStoreRejectsDuplicateIDs(t *testing.T) {
+	store, err := product.NewMemoryStore([]product.Product{
+		{ID: "prod-1", Name: "First product", PriceCents: 100},
+		{ID: "prod-1", Name: "Second product", PriceCents: 200},
+	})
+
+	if !errors.Is(err, product.ErrDuplicateID) {
+		t.Errorf("NewMemoryStore() error = %v, want ErrDuplicateID", err)
+	}
+
+	if store != nil {
+		t.Errorf("NewMemoryStore() store = %#v, want nil", store)
 	}
 }
