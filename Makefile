@@ -9,8 +9,17 @@ K8S_LOCAL_CATALOG_IMAGE ?= sretail-catalog:$(K8S_LOCAL_CATALOG_TAG)
 K8S_LOCAL_CATALOG_OVERLAY = deploy/k8s/overlays/local/catalog
 
 .PHONY: local-config local-build local-up local-test local-verify local-logs local-down \
-	k8s-local-config k8s-local-render k8s-local-verify-clean-tree k8s-local-set-image k8s-local-build k8s-local-load k8s-local-deploy \
+	k8s-local-config k8s-local-render k8s-local-verify-clean-tree k8s-local-build k8s-local-load k8s-local-deploy \
 	k8s-local-status
+
+define K8S_LOCAL_PREPARE_GENERATED_OVERLAY
+render_dir="$$(mktemp -d)"; \
+trap 'rm -rf -- "$$render_dir"' EXIT HUP INT TERM; \
+kubectl kustomize "$(K8S_LOCAL_CATALOG_OVERLAY)" > "$$render_dir/resources.yaml"; \
+cd "$$render_dir"; \
+$(KUSTOMIZE) create --resources resources.yaml; \
+$(KUSTOMIZE) edit set image "sretail-catalog=$(K8S_LOCAL_CATALOG_IMAGE)"
+endef
 
 local-config:
 	@test -f "$(LOCAL_ENV_FILE)" || { \
@@ -51,10 +60,12 @@ k8s-local-config:
 		echo "Kind cluster $(KIND_CLUSTER) was not found in Docker context $(KIND_DOCKER_CONTEXT)."; \
 		exit 1; \
 	}
-	kubectl kustomize $(K8S_LOCAL_CATALOG_OVERLAY) >/dev/null
+	@kubectl kustomize $(K8S_LOCAL_CATALOG_OVERLAY) >/dev/null
 
 k8s-local-render: k8s-local-config
-	kubectl kustomize $(K8S_LOCAL_CATALOG_OVERLAY)
+	@set -eu; \
+		$(K8S_LOCAL_PREPARE_GENERATED_OVERLAY); \
+		kubectl kustomize .
 
 k8s-local-verify-clean-tree:
 	@test -z "$$(git status --porcelain)" || { \
@@ -62,27 +73,20 @@ k8s-local-verify-clean-tree:
 		exit 1; \
 	}
 
-k8s-local-set-image:
-	@command -v "$(KUSTOMIZE)" >/dev/null || { \
-		echo "Missing Kustomize. Install the standalone kustomize CLI to update image tags."; \
-		exit 1; \
-	}
-	cd $(K8S_LOCAL_CATALOG_OVERLAY) && $(KUSTOMIZE) edit set image registry.invalid/sretail/catalog=$(K8S_LOCAL_CATALOG_IMAGE)
-
 k8s-local-build:
 	docker --context $(KIND_DOCKER_CONTEXT) build -f services/catalog/Dockerfile -t $(K8S_LOCAL_CATALOG_IMAGE) .
 
 k8s-local-load:
 	$(MAKE) k8s-local-verify-clean-tree
 	$(MAKE) k8s-local-config
-	$(MAKE) k8s-local-set-image
-	$(MAKE) k8s-local-config
 	$(MAKE) k8s-local-build
 	DOCKER_CONTEXT=$(KIND_DOCKER_CONTEXT) kind load docker-image $(K8S_LOCAL_CATALOG_IMAGE) --name $(KIND_CLUSTER)
 
 k8s-local-deploy: k8s-local-load
-	kubectl apply -k $(K8S_LOCAL_CATALOG_OVERLAY)
-	kubectl rollout status deployment/catalog --timeout=60s
+	@set -eu; \
+		$(K8S_LOCAL_PREPARE_GENERATED_OVERLAY); \
+		kubectl apply -k .; \
+		kubectl rollout status deployment/catalog --timeout=60s
 
 k8s-local-status: k8s-local-config
 	kubectl get deployment,pods,service,endpointslice -l app.kubernetes.io/name=catalog,app.kubernetes.io/instance=sretail
